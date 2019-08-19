@@ -148,7 +148,7 @@ func (c *Connector) GetTCPConnection() *net.TCPConn {
 }
 
 func (c *Connector) GetConnID() uint32 {
-	return 0
+	return uint32(c.connID)
 }
 
 func (c *Connector) GetInstance() Igotcp.IServer {
