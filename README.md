@@ -1,9 +1,4 @@
-<p align="center">
-<img 
-    src="logo.png" 
-    width="213" height="75" border="0" alt="evio">
-<br>
-</p>
+![](./logo.png)
 
 `gotcp` 是采用golang,以面向接口方式开发的,轻量级的,TCP框架.
 
