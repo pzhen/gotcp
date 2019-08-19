@@ -1,0 +1,9 @@
+{
+  "Name": "MyTcpServer",
+  "Host": "127.0.0.1",
+  "Version": "v0.2",
+  "Port": 9888,
+  "MaxConn": 100,
+  "MaxPkgSize": 512,
+  "IPVersion":"tcp4"
+}
