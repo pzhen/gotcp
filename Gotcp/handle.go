@@ -17,8 +17,8 @@ type MsgHandle struct {
 func NewMsgHandle() *MsgHandle {
 	return &MsgHandle{
 		MsgRouterMap: make(map[uint32]Igotcp.IRouter),
-		TaskQueue:    make([]chan Igotcp.IRequest, Conf.G_Conf.WorkPoolSize),
-		WorkPoolSize: Conf.G_Conf.WorkPoolSize,
+		TaskQueue:    make([]chan Igotcp.IRequest, Conf.SrvConf.WorkPoolSize),
+		WorkPoolSize: Conf.SrvConf.WorkPoolSize,
 	}
 }
 
@@ -42,7 +42,7 @@ func (mh *MsgHandle) AddRouter(msgId uint32, router Igotcp.IRouter) {
 
 func (mh* MsgHandle) StartWorkerPool() {
 	for i:= 0; i < int(mh.WorkPoolSize); i++ {
-		mh.TaskQueue[i] = make(chan Igotcp.IRequest, Conf.G_Conf.MaxWorkPoolSize)
+		mh.TaskQueue[i] = make(chan Igotcp.IRequest, Conf.SrvConf.MaxWorkPoolSize)
 		go mh.startWorker(i, mh.TaskQueue[i])
 	}
 }

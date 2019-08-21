@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"gotcp/Igotcp"
 	"io/ioutil"
-	"log"
 )
 
-type GConf struct {
-	Name            string
-	Host            string
-	Version         string
-	IPVersion       string
-	Port            int
+type Conf struct {
+	Env     string
+	Name    string
+	Version string
+
+	Host      string
+	IPVersion string
+	Port      int
+
 	MaxConn         int
 	MaxPkgSize      uint32
 	WorkPoolSize    uint32
@@ -20,7 +22,7 @@ type GConf struct {
 	TcpServer       Igotcp.IServer
 }
 
-var G_Conf *GConf
+var SrvConf *Conf
 
 func init() {
 	var (
@@ -28,7 +30,8 @@ func init() {
 		data []byte
 	)
 
-	G_Conf = &GConf{
+	SrvConf = &Conf{
+		Env:             "Test",
 		TcpServer:       nil,
 		MaxPkgSize:      512,
 		WorkPoolSize:    10,
@@ -41,11 +44,12 @@ func init() {
 		Host:            "0.0.0.0",
 	}
 
-	if data, err = ioutil.ReadFile("conf/gotcp.json"); err != nil {
-		log.Fatalln("[Panic] ioutil.ReadFile(conf/gotcp.json) : ", err)
-	}
+	func(){
+		data, err = ioutil.ReadFile("conf/gotcp.json")
+		err = json.Unmarshal(data, &SrvConf)
+	}()
 
-	if err = json.Unmarshal(data, &G_Conf); err != nil {
-		log.Fatalln("[Panic] json.Unmarshal(data, &G_Conf) : ", err)
+	if err != nil {
+		panic(err)
 	}
 }

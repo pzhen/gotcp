@@ -97,7 +97,7 @@ func (c *Connector) Read() {
 			msg:       msg,
 		}
 
-		if Conf.G_Conf.WorkPoolSize > 0 {
+		if Conf.SrvConf.WorkPoolSize > 0 {
 			c.handle.SendMsgToTaskQueue(req)
 		} else {
 			go c.handle.DoMsgHandler(req)

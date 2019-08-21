@@ -3,13 +3,13 @@ package Gotcp
 import (
 	"fmt"
 	"gotcp/Conf"
-	"gotcp/Helper"
 	"gotcp/Igotcp"
 	"log"
 	"net"
 )
 
 type Server struct {
+	Env       string
 	Name      string
 	IPVersion string
 	IP        string
@@ -22,18 +22,15 @@ type Server struct {
 	OnConnStop  func(conn Igotcp.IConnector)
 }
 
-func init() {
-	Helper.PrintLog()
-}
-
 // 初始化gotcp服务
 func InitServer() (srv Igotcp.IServer) {
 	srv = &Server{
-		Name:      Conf.G_Conf.Name,
-		IP:        Conf.G_Conf.Host,
-		Port:      Conf.G_Conf.Port,
-		MaxConn:   Conf.G_Conf.MaxConn,
-		IPVersion: Conf.G_Conf.IPVersion,
+		Env:       Conf.SrvConf.Env,
+		Name:      Conf.SrvConf.Name,
+		IP:        Conf.SrvConf.Host,
+		Port:      Conf.SrvConf.Port,
+		MaxConn:   Conf.SrvConf.MaxConn,
+		IPVersion: Conf.SrvConf.IPVersion,
 		Handle:    NewMsgHandle(),
 		Manager:   NewManager(),
 	}
@@ -58,15 +55,12 @@ func (s *Server) SetOnConnStop(f func(Igotcp.IConnector)) {
 
 func (s *Server) CallOnConnStart(c Igotcp.IConnector) {
 	if s.OnConnStart != nil {
-		log.Println("[Info] call on start connect")
 		s.OnConnStart(c)
 	}
-
 }
 
 func (s *Server) CallOnConnStop(c Igotcp.IConnector) {
 	if s.OnConnStop != nil {
-		log.Println("[Info] call on stop connect")
 		s.OnConnStop(c)
 	}
 }
@@ -104,10 +98,10 @@ func (s *Server) Start() {
 				continue
 			}
 
-			if s.Manager.Len() >= Conf.G_Conf.MaxConn {
+			if s.Manager.Len() >= Conf.SrvConf.MaxConn {
 				//TODO 错误包
 				conn.Close()
-				log.Println("[Error] too Many Connections MaxConn : ", Conf.G_Conf.MaxConn)
+				log.Println("[Error] too Many Connections MaxConn : ", Conf.SrvConf.MaxConn)
 				continue
 			}
 
@@ -125,12 +119,12 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	s.Manager.ClearConn()
-	log.Printf("[Stop] gotcp %s is stoped at IP :%s, Port %d ......\n", Conf.G_Conf.Version, Conf.G_Conf.Host, Conf.G_Conf.Port)
+	debugPrint("Server stoped HTTP on %s:%d\n", Conf.SrvConf.Host, Conf.SrvConf.Port)
 }
 
 func (s *Server) Run() {
 	c := make(chan struct{})
+	debugPrint("Listening and serving HTTP on %s:%d\n", Conf.SrvConf.Host, Conf.SrvConf.Port)
 	s.Start()
-	log.Printf("[Start] gotcp %s is running at IP :%s, Port %d ......\n", Conf.G_Conf.Version, Conf.G_Conf.Host, Conf.G_Conf.Port)
 	<-c
 }

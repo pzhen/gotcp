@@ -55,7 +55,7 @@ func (p *msgPkg) Unpack(binaryData []byte) (Igotcp.IMessage, error) {
 		Id:  id,
 	}
 
-	if Conf.G_Conf.MaxPkgSize > 0 && msg.Len > Conf.G_Conf.MaxPkgSize {
+	if Conf.SrvConf.MaxPkgSize > 0 && msg.Len > Conf.SrvConf.MaxPkgSize {
 		return nil, errors.New("too Large msg data recv ")
 	}
 
