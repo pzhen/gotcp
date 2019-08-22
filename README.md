@@ -118,7 +118,5 @@ func main() {
 }
 ```
 
-![](./1.png)
-
 ## License
 
