@@ -1,11 +1,9 @@
-//对消息message进行包装
-//防止粘包,采用TLV格式进行封包解包
 package Gotcp
 
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
+	"github.com/pkg/errors"
 	"gotcp/Conf"
 	"gotcp/Igotcp"
 )
@@ -21,16 +19,19 @@ func (p *msgPkg) GetHeadLen() int {
 }
 
 func (p *msgPkg) Pack(msg Igotcp.IMessage) ([]byte, error) {
-	dataBuff := bytes.NewBuffer([]byte{})
-	if err := binary.Write(dataBuff, binary.LittleEndian, msg.GetLen()); err != nil {
-		return nil, err
-	}
+	var (
+		err error
+		dataBuff *bytes.Buffer
+	)
 
-	if err := binary.Write(dataBuff, binary.LittleEndian, msg.GetId()); err != nil {
-		return nil, err
-	}
+	func(){
+		dataBuff = bytes.NewBuffer([]byte{})
+		err = binary.Write(dataBuff, binary.LittleEndian, msg.GetLen())
+		err = binary.Write(dataBuff, binary.LittleEndian, msg.GetId())
+		err = binary.Write(dataBuff, binary.LittleEndian, msg.GetData())
+	}()
 
-	if err := binary.Write(dataBuff, binary.LittleEndian, msg.GetData()); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -38,15 +39,20 @@ func (p *msgPkg) Pack(msg Igotcp.IMessage) ([]byte, error) {
 }
 
 func (p *msgPkg) Unpack(binaryData []byte) (Igotcp.IMessage, error) {
-	dataBuff := bytes.NewReader(binaryData)
 	var (
 		id  uint32
 		len uint32
+		err error
+		dataBuff *bytes.Reader
 	)
-	if err := binary.Read(dataBuff, binary.LittleEndian, &len); err != nil {
-		return nil, err
-	}
-	if err := binary.Read(dataBuff, binary.LittleEndian, &id); err != nil {
+
+	func(){
+		dataBuff = bytes.NewReader(binaryData)
+		err = binary.Read(dataBuff, binary.LittleEndian, &len)
+		err = binary.Read(dataBuff, binary.LittleEndian, &id)
+	}()
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -56,8 +62,7 @@ func (p *msgPkg) Unpack(binaryData []byte) (Igotcp.IMessage, error) {
 	}
 
 	if Conf.SrvConf.MaxPkgSize > 0 && msg.Len > Conf.SrvConf.MaxPkgSize {
-		return nil, errors.New("too Large msg data recv ")
+		return nil, errors.New("Msgpkg too large")
 	}
-
 	return msg, nil
 }

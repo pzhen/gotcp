@@ -1,38 +1,35 @@
 package Gotcp
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
+	"github.com/satori/go.uuid"
 	"gotcp/Conf"
 	"gotcp/Igotcp"
-	"log"
+	"hash/crc32"
 	"net"
+	"os"
 )
 
 type Server struct {
-	Env       string
-	Name      string
-	IPVersion string
-	IP        string
-	Port      int
-	MaxConn   int
-	Handle    Igotcp.IHandle
-	Manager   Igotcp.IManager
-
-	OnConnStart func(conn Igotcp.IConnector)
+	Address     string
+	Network     string
+	MaxConn     int
+	Handle      Igotcp.IHandle
+	Manager     Igotcp.IManager
 	OnConnStop  func(conn Igotcp.IConnector)
+	OnConnStart func(conn Igotcp.IConnector)
 }
 
 // 初始化gotcp服务
 func InitServer() (srv Igotcp.IServer) {
 	srv = &Server{
-		Env:       Conf.SrvConf.Env,
-		Name:      Conf.SrvConf.Name,
-		IP:        Conf.SrvConf.Host,
-		Port:      Conf.SrvConf.Port,
-		MaxConn:   Conf.SrvConf.MaxConn,
-		IPVersion: Conf.SrvConf.IPVersion,
-		Handle:    NewMsgHandle(),
-		Manager:   NewManager(),
+		Address:     Conf.SrvConf.Address,
+		Network:     Conf.SrvConf.Network,
+		MaxConn:     Conf.SrvConf.MaxConn,
+		Handle:      NewMsgHandle(),
+		Manager:     NewManager(),
+		OnConnStop:  nil,
+		OnConnStart: nil,
 	}
 	return
 }
@@ -65,26 +62,25 @@ func (s *Server) CallOnConnStop(c Igotcp.IConnector) {
 	}
 }
 
-//启动TCP服务
 func (s *Server) Start() {
 	go func() {
-		// 开启工作池
+		debugPrint("Worker pool is starting, worker num : %d", Conf.SrvConf.WorkPoolSize)
 		s.Handle.StartWorkerPool()
 
 		var (
 			addr     *net.TCPAddr
 			err      error
 			listener *net.TCPListener
-			cid      int
 		)
 
-		if addr, err = net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port)); err != nil {
-			log.Fatalln("[Error] net.ResolveTCPAddr() : ", err)
-			return
-		}
+		func() {
+			addr, err = net.ResolveTCPAddr(s.Network, s.Address)
+			listener, err = net.ListenTCP(s.Network, addr)
+		}()
 
-		if listener, err = net.ListenTCP(s.IPVersion, addr); err != nil {
-			log.Fatalln("[Error] net.ListenTCP(s.IPVersion, addr) : ", err)
+		if err != nil {
+			debugPrintError("%+v", errors.WithStack(err))
+			os.Exit(1)
 		}
 
 		for {
@@ -94,24 +90,20 @@ func (s *Server) Start() {
 			)
 
 			if conn, err = listener.AcceptTCP(); err != nil {
-				log.Println("[Warning] listener.AcceptTCP() : ", err)
+				debugPrint(err.Error())
 				continue
 			}
 
 			if s.Manager.Len() >= Conf.SrvConf.MaxConn {
-				//TODO 错误包
 				conn.Close()
-				log.Println("[Error] too Many Connections MaxConn : ", Conf.SrvConf.MaxConn)
+				debugPrintError("%+v", errors.WithStack(errors.Errorf("Too Many Connections , MaxConn is %d", Conf.SrvConf.MaxConn)))
 				continue
 			}
 
-			// TODO 暂时链接ID用自增来处理
-			cid++
-			//获取连接器
-			connector = NewConnector(s, conn, cid, s.Handle)
-			log.Printf("[Info] welcome clientID : %d connect ...", cid)
+			cid, _ := uuid.NewV4()
+			connector = NewConnector(s, conn, cid.String(), s.Handle)
+			debugPrint("UUID=%s, HashCode=%d", cid.String(), crc32.ChecksumIEEE([]byte(cid.String())))
 
-			//启动连接器
 			connector.Start()
 		}
 	}()
@@ -119,12 +111,12 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	s.Manager.ClearConn()
-	debugPrint("Server stoped HTTP on %s:%d\n", Conf.SrvConf.Host, Conf.SrvConf.Port)
+	debugPrint("Server stoped HTTP on %s", s.Address)
 }
 
 func (s *Server) Run() {
 	c := make(chan struct{})
-	debugPrint("Listening and serving HTTP on %s:%d\n", Conf.SrvConf.Host, Conf.SrvConf.Port)
+	debugPrint("Listening and serving HTTP on %s", s.Address)
 	s.Start()
 	<-c
 }

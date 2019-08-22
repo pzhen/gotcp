@@ -1,5 +1,3 @@
-//路由的实现
-//具体业务都应该继承该类去重写
 package Gotcp
 
 import "gotcp/Igotcp"

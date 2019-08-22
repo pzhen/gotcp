@@ -6,7 +6,7 @@ type IManager interface {
 	//删除连接
 	Remove(conn IConnector)
 	//根据connID获取链接
-	Get(connID uint32) (IConnector, error)
+	Get(string) (IConnector, error)
 	//得到当前连接总数
 	Len() int
 	//清除并终止所有d连接

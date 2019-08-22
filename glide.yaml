@@ -1,2 +1,8 @@
 package: gotcp
-import: []
+import: [
+{
+  "package":"github.com/satori/go.uuid"
+},{
+  "package":"github.com/pkg/errors"
+}
+]

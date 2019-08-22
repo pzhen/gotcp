@@ -40,9 +40,6 @@ func print(level string, format string, values ...interface{})  {
 	if !strings.HasSuffix(format, "\n") {
 		format += "\n"
 	}
-	if level == "" {
-		level = LevelInfo
-	}
 	prefix := time.Now().Format("2006/01/02 15:04:05") + " " + fmt.Sprintf(level, Conf.SrvConf.Env) + " "
 	fmt.Fprintf(os.Stderr, prefix + format, values...)
 }

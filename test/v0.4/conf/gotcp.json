@@ -1,10 +1,9 @@
 {
   "Env": "Test",
   "Name": "MyTcpServer",
-  "Host": "127.0.0.1",
-  "Port": 9888,
-  "MaxConn": 1,
+  "Address": "0.0.0.0:9888",
+  "MaxConn": 1000000,
   "MaxPkgSize": 512,
-  "IPVersion":"tcp4",
+  "Network":"tcp4",
   "WorkPoolSize":10
  }

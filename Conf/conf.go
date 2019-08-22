@@ -2,24 +2,22 @@ package Conf
 
 import (
 	"encoding/json"
-	"gotcp/Igotcp"
+	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
+	"os"
 )
 
 type Conf struct {
-	Env     string
-	Name    string
-	Version string
-
-	Host      string
-	IPVersion string
-	Port      int
-
+	Env             string
+	Name            string
+	Version         string
+	Address         string
+	Network         string
 	MaxConn         int
 	MaxPkgSize      uint32
 	WorkPoolSize    uint32
 	MaxWorkPoolSize uint32
-	TcpServer       Igotcp.IServer
 }
 
 var SrvConf *Conf
@@ -31,25 +29,24 @@ func init() {
 	)
 
 	SrvConf = &Conf{
-		Env:             "Test",
-		TcpServer:       nil,
-		MaxPkgSize:      512,
-		WorkPoolSize:    10,
-		MaxWorkPoolSize: 1024,
-		Port:            8999,
-		MaxConn:         1000,
-		Version:         "v1.0",
-		IPVersion:       "tcp4",
-		Name:            "gotcp",
-		Host:            "0.0.0.0",
+		"Test",
+		"Gotcp",
+		"v1.0",
+		"0.0.0.0:8999",
+		"tcp4",
+		5000000,
+		512,
+		10,
+		1024,
 	}
 
-	func(){
+	func() {
 		data, err = ioutil.ReadFile("conf/gotcp.json")
 		err = json.Unmarshal(data, &SrvConf)
 	}()
 
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "%+v\n", errors.WithStack(err))
+		os.Exit(1)
 	}
 }

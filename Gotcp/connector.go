@@ -3,17 +3,17 @@
 package Gotcp
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"gotcp/Conf"
 	"gotcp/Igotcp"
+	"hash/crc32"
 	"io"
-	"log"
 	"net"
 )
 
 type Connector struct {
 	conn     *net.TCPConn
-	connID   int
+	uuid     string
 	isClosed bool
 	exitChan chan bool
 	handle   Igotcp.IHandle
@@ -21,11 +21,10 @@ type Connector struct {
 	instance Igotcp.IServer
 }
 
-//为每个连接生成一个连接器
-func NewConnector(srv Igotcp.IServer, conn *net.TCPConn, connID int, r Igotcp.IHandle) (connector Igotcp.IConnector) {
+func NewConnector(srv Igotcp.IServer, conn *net.TCPConn, cid string, r Igotcp.IHandle) (connector Igotcp.IConnector) {
 	connector = &Connector{
 		conn:     conn,
-		connID:   connID,
+		uuid:     cid,
 		isClosed: false,
 		handle:   r,
 		exitChan: make(chan bool, 1),
@@ -58,8 +57,6 @@ func (c *Connector) Stop() {
 }
 
 func (c *Connector) Read() {
-	log.Println("[Info] read  goroutine is starting...")
-	defer log.Println("[Info] read  goroutine is quit...")
 	defer c.Stop()
 	for {
 		var (
@@ -73,20 +70,20 @@ func (c *Connector) Read() {
 
 		mpkg = NewMsgPack()
 		headData = make([]byte, mpkg.GetHeadLen())
-		if _, err = io.ReadFull(c.GetTCPConnection(), headData); err != nil {
-			log.Println("[Error] io.ReadFull(c.GetTCPConnection(), headData) : ", err)
-			break
-		}
 
-		if msg, err = mpkg.Unpack(headData); err != nil {
-			log.Println("[Error] mpkg.Unpack(headData) : ", err)
+		func(){
+			_, err = io.ReadFull(c.GetTCPConnection(), headData)
+			msg, err = mpkg.Unpack(headData)
+		}()
+
+		if err != nil {
+			debugPrintError("%+v", errors.WithStack(err))
 			break
 		}
 
 		if msg.GetLen() > 0 {
 			buf = make([]byte, msg.GetLen())
-			if _, err := io.ReadFull(c.GetTCPConnection(), buf); err != nil {
-				log.Println("[Error]io.ReadFull(c.GetTCPConnection(), buf) : ", err)
+			if _, err = io.ReadFull(c.GetTCPConnection(), buf); err != nil {
 				break
 			}
 			msg.SetData(buf)
@@ -103,18 +100,17 @@ func (c *Connector) Read() {
 			go c.handle.DoMsgHandler(req)
 		}
 
-		log.Printf("[Info] server receive data : msgId : %d , msgLen : %d msgData : %s \n", msg.GetId(), msg.GetLen(), msg.GetData())
+		debugPrint("Receive : msgId : %d , msgLen : %d msgData : %s", msg.GetId(), msg.GetLen(), msg.GetData())
 	}
 }
 
 func (c *Connector) Write() {
-	log.Println("[Info] write goroutine is starting...")
-	defer log.Println("[Info] write goroutine is quit...")
+	defer c.Stop()
 	for {
 		select {
 		case data := <-c.msgChan:
 			if _, err := c.conn.Write(data); err != nil {
-				log.Println("[Error] c.conn.Write(data) : ", err)
+				debugPrintError("%+v", errors.WithStack(err))
 				return
 			}
 		case <-c.exitChan:
@@ -147,8 +143,12 @@ func (c *Connector) GetTCPConnection() *net.TCPConn {
 	return c.conn
 }
 
-func (c *Connector) GetConnID() uint32 {
-	return uint32(c.connID)
+func (c *Connector) GetUUIDHashCode() uint32 {
+	return crc32.ChecksumIEEE([]byte(c.uuid))
+}
+
+func (c *Connector) GetUUID() string {
+	return c.uuid
 }
 
 func (c *Connector) GetInstance() Igotcp.IServer {

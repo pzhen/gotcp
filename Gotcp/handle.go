@@ -1,10 +1,9 @@
 package Gotcp
 
 import (
+	"github.com/pkg/errors"
 	"gotcp/Conf"
 	"gotcp/Igotcp"
-	"log"
-	"strconv"
 )
 
 type MsgHandle struct {
@@ -25,7 +24,8 @@ func NewMsgHandle() *MsgHandle {
 func (mh *MsgHandle) DoMsgHandler(request Igotcp.IRequest) {
 	router, ok := mh.MsgRouterMap[request.GetMsgId()]
 	if !ok {
-		log.Panicf("[Panic] can't find msgId : %d 's router", request.GetMsgId())
+		debugPrintError("%+v", errors.WithStack(errors.Errorf("Handle router=%d not found", request.GetMsgId())))
+		return
 	}
 
 	router.BeforeHandle(request)
@@ -35,23 +35,23 @@ func (mh *MsgHandle) DoMsgHandler(request Igotcp.IRequest) {
 
 func (mh *MsgHandle) AddRouter(msgId uint32, router Igotcp.IRouter) {
 	if _, ok := mh.MsgRouterMap[msgId]; ok {
-		log.Panicln("[Panic] mh.MsgRouterMap[" + strconv.Itoa(int(msgId)) + "] : is registered")
+		debugPrintError("%+v", errors.WithStack(errors.Errorf("Handle router=%d is registered", msgId)))
+		return
 	}
 	mh.MsgRouterMap[msgId] = router
 }
 
-func (mh* MsgHandle) StartWorkerPool() {
-	for i:= 0; i < int(mh.WorkPoolSize); i++ {
+func (mh *MsgHandle) StartWorkerPool() {
+	for i := 0; i < int(mh.WorkPoolSize); i++ {
 		mh.TaskQueue[i] = make(chan Igotcp.IRequest, Conf.SrvConf.MaxWorkPoolSize)
 		go mh.startWorker(i, mh.TaskQueue[i])
 	}
 }
 
-func (mh* MsgHandle) startWorker(workerId int, taskQueue chan Igotcp.IRequest) {
-	log.Println("[Info] worker id = ", workerId, " is started ...")
+func (mh *MsgHandle) startWorker(workerId int, taskQueue chan Igotcp.IRequest) {
 	for {
 		select {
-		case request:= <- taskQueue:
+		case request := <-taskQueue:
 			mh.DoMsgHandler(request)
 		}
 	}
@@ -59,6 +59,6 @@ func (mh* MsgHandle) startWorker(workerId int, taskQueue chan Igotcp.IRequest) {
 
 //将请求交给TaskQueue， 由Worker进行处理
 func (mh *MsgHandle) SendMsgToTaskQueue(request Igotcp.IRequest) {
-	workerID := request.GetConnector().GetConnID() % mh.WorkPoolSize
+	workerID := request.GetConnector().GetUUIDHashCode() % mh.WorkPoolSize
 	mh.TaskQueue[workerID] <- request
 }

@@ -1,45 +1,42 @@
 package Gotcp
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"gotcp/Igotcp"
-	"log"
 	"sync"
 )
 
 type Manager struct {
-	connMap  map[uint32]Igotcp.IConnector
+	connMap  map[string]Igotcp.IConnector
 	connLock sync.RWMutex
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		connMap:make(map[uint32] Igotcp.IConnector),
+		connMap:make(map[string] Igotcp.IConnector),
 	}
 }
 
 func (mgr *Manager) Add(conn Igotcp.IConnector) {
 	mgr.connLock.Lock()
 	defer mgr.connLock.Unlock()
-	mgr.connMap[conn.GetConnID()] = conn
-	log.Printf("[Info] connection id : %d is added manager map connMap length : %d", conn.GetConnID(), mgr.Len())
+	mgr.connMap[conn.GetUUID()] = conn
 }
 
 func (mgr *Manager) Remove(conn Igotcp.IConnector) {
 	mgr.connLock.Lock()
 	defer mgr.connLock.Unlock()
-	delete(mgr.connMap, conn.GetConnID())
-	log.Printf("[Info] connection id : %d is removed manager map connMap length : %d", conn.GetConnID(), mgr.Len())
+	delete(mgr.connMap, conn.GetUUID())
 }
 
-func (mgr *Manager) Get(connID uint32) (Igotcp.IConnector, error) {
+func (mgr *Manager) Get(uuid string) (Igotcp.IConnector, error) {
 	mgr.connLock.RLock()
 	defer mgr.connLock.RUnlock()
 
-	if conn, ok := mgr.connMap[connID]; ok {
+	if conn, ok := mgr.connMap[uuid]; ok {
 		return conn, nil
 	} else {
-		return nil, errors.New("[Warning] connection not found")
+		return nil, errors.New("Manager UUID=" + uuid + " not found")
 	}
 }
 
@@ -50,11 +47,9 @@ func (mgr *Manager) Len() int {
 func (mgr *Manager) ClearConn() {
 	mgr.connLock.Lock()
 	defer mgr.connLock.Unlock()
-	for connID, conn := range mgr.connMap {
-		//停止
+	for uuid, conn := range mgr.connMap {
 		conn.Stop()
-		//删除
-		delete(mgr.connMap, connID)
+		delete(mgr.connMap, uuid)
 	}
-	log.Println("[Info] Clear All connections success connMap length : ", mgr.Len())
+	debugPrint("Manager cleared all UUIDS", mgr.Len())
 }
