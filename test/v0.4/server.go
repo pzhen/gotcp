@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"gotcp/Gotcp"
 	"gotcp/Igotcp"
-	"os"
-	"runtime/trace"
 )
 
 type MyRouter1 struct {
@@ -40,24 +38,19 @@ func doAfter(connector Igotcp.IConnector)  {
 }
 
 func main() {
-
-
-
-	go func() {
-		f, err := os.Create("trace.out")
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = trace.Start(f)
-		if err != nil {
-			panic(err)
-		}
-		defer trace.Stop()
-	}()
-
-
+	//go func() {
+	//	f, err := os.Create("trace.out")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	defer f.Close()
+	//
+	//	err = trace.Start(f)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	defer trace.Stop()
+	//}()
 	srv := Gotcp.InitServer()
 	srv.AddRouter(1, &MyRouter1{})
 	srv.AddRouter(2, &MyRouter2{})
