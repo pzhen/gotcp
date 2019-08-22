@@ -13,7 +13,7 @@ type Manager struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		connMap:make(map[string] Igotcp.IConnector),
+		connMap: make(map[string]Igotcp.IConnector),
 	}
 }
 

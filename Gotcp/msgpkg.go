@@ -20,11 +20,11 @@ func (p *msgPkg) GetHeadLen() int {
 
 func (p *msgPkg) Pack(msg Igotcp.IMessage) ([]byte, error) {
 	var (
-		err error
+		err      error
 		dataBuff *bytes.Buffer
 	)
 
-	func(){
+	func() {
 		dataBuff = bytes.NewBuffer([]byte{})
 		err = binary.Write(dataBuff, binary.LittleEndian, msg.GetLen())
 		err = binary.Write(dataBuff, binary.LittleEndian, msg.GetId())
@@ -40,13 +40,13 @@ func (p *msgPkg) Pack(msg Igotcp.IMessage) ([]byte, error) {
 
 func (p *msgPkg) Unpack(binaryData []byte) (Igotcp.IMessage, error) {
 	var (
-		id  uint32
-		len uint32
-		err error
+		id       uint32
+		len      uint32
+		err      error
 		dataBuff *bytes.Reader
 	)
 
-	func(){
+	func() {
 		dataBuff = bytes.NewReader(binaryData)
 		err = binary.Read(dataBuff, binary.LittleEndian, &len)
 		err = binary.Read(dataBuff, binary.LittleEndian, &id)

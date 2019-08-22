@@ -71,7 +71,7 @@ func (c *Connector) Read() {
 		mpkg = NewMsgPack()
 		headData = make([]byte, mpkg.GetHeadLen())
 
-		func(){
+		func() {
 			_, err = io.ReadFull(c.GetTCPConnection(), headData)
 			msg, err = mpkg.Unpack(headData)
 		}()
