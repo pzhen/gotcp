@@ -44,7 +44,6 @@ package main
 
 import (
 	"fmt"
-	_ "github.com/mkevac/debugcharts"
 	"gotcp/Gotcp"
 	"gotcp/Igotcp"
 	_ "net/http/pprof"
@@ -60,40 +59,40 @@ type MyRouter2 struct {
 
 //业务处理前
 func (m *MyRouter1) BeforeHandle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("MyRouter1======>BeforeHandle")); err != nil {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1==>BeforeHandle")); err != nil {
 		fmt.Println(err)
 	}
 }
 
 //业务处理
 func (m *MyRouter1) Handle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("MyRouter1======>Handle")); err != nil {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1==>Handle")); err != nil {
 		fmt.Println(err)
 	}
 }
 
 //业务处理后
 func (m *MyRouter1) AfterHandle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("MyRouter1======>AfterHandle")); err != nil {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1==>AfterHandle")); err != nil {
 		fmt.Println(err)
 	}
 }
 
 //直接处理业务
 func (m *MyRouter2) Handle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("MyRouter2======>handle")); err != nil {
+	if err := r.GetConnector().Send(1, []byte("MyRouter2==>handle")); err != nil {
 		fmt.Println(err)
 	}
 }
 
 //连接器创建后做一些处理
 func onConnect(connector Igotcp.IConnector) {
-	connector.Send(1, []byte("doBefore"))
+	connector.Send(1, []byte("onConnect"))
 }
 
 //连接器销毁前做一些处理
 func offConnect(connector Igotcp.IConnector) {
-	connector.Send(2, []byte("doAfter"))
+	connector.Send(2, []byte("offConnect"))
 }
 
 func main() {
