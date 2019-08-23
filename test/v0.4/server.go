@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	_ "github.com/mkevac/debugcharts"
 	"gotcp/Gotcp"
 	"gotcp/Igotcp"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 type MyRouter1 struct {
@@ -51,10 +54,18 @@ func main() {
 	//	}
 	//	defer trace.Stop()
 	//}()
+
+	go func() {
+		if err := http.ListenAndServe("127.0.0.1:29999", nil); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+
 	srv := Gotcp.InitServer()
 	srv.AddRouter(1, &MyRouter1{})
 	srv.AddRouter(2, &MyRouter2{})
-	srv.AddRouter(2, &MyRouter2{})
+	srv.AddRouter(3, &MyRouter2{})
 
 	srv.SetOnConnStart(doBefore)
 	srv.SetOnConnStop(doAfter)

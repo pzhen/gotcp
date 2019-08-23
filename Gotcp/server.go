@@ -20,7 +20,6 @@ type Server struct {
 	OnConnStart func(conn Igotcp.IConnector)
 }
 
-// 初始化gotcp服务
 func InitServer() (srv Igotcp.IServer) {
 	srv = &Server{
 		Address:     Conf.SrvConf.Address,
@@ -90,7 +89,7 @@ func (s *Server) Start() {
 			)
 
 			if conn, err = listener.AcceptTCP(); err != nil {
-				debugPrint(err.Error())
+				debugPrintError("%+v", errors.WithStack(err))
 				continue
 			}
 
@@ -103,7 +102,6 @@ func (s *Server) Start() {
 			cid, _ := uuid.NewV4()
 			connector = NewConnector(s, conn, cid.String(), s.Handle)
 			debugPrint("UUID=%s, HashCode=%d", cid.String(), crc32.ChecksumIEEE([]byte(cid.String())))
-
 			connector.Start()
 		}
 	}()

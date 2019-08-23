@@ -1,5 +1,3 @@
-//连接器
-//负责 为每个tcp链接生成一个连接器
 package Gotcp
 
 import (
@@ -47,16 +45,19 @@ func (c *Connector) Stop() {
 		return
 	}
 	c.isClosed = true
-	// 销毁socket之前
+
 	c.instance.CallOnConnStop(c)
+
 	c.conn.Close()
 	c.exitChan <- true
 	c.instance.GetManager().Remove(c)
+
 	close(c.exitChan)
 	close(c.msgChan)
 }
 
 func (c *Connector) Read() {
+	defer debugPrint("Goroutine read quit from UUID=%s", c.GetUUID())
 	defer c.Stop()
 	for {
 		var (
@@ -71,23 +72,27 @@ func (c *Connector) Read() {
 		mpkg = NewMsgPack()
 		headData = make([]byte, mpkg.GetHeadLen())
 
-		func() {
-			_, err = io.ReadFull(c.GetTCPConnection(), headData)
-			msg, err = mpkg.Unpack(headData)
-		}()
-
+		_, err = io.ReadFull(c.GetTCPConnection(), headData)
 		if err != nil {
-			debugPrintError("%+v", errors.WithStack(err))
+			c.Stop()
+			debugPrintWarn(err.Error())
 			break
 		}
 
-		if msg.GetLen() > 0 {
-			buf = make([]byte, msg.GetLen())
-			if _, err = io.ReadFull(c.GetTCPConnection(), buf); err != nil {
-				break
-			}
-			msg.SetData(buf)
+		msg, err = mpkg.Unpack(headData)
+		if err != nil {
+			c.Stop()
+			debugPrintWarn(err.Error())
+			break
 		}
+
+		buf = make([]byte, msg.GetLen())
+		if _, err = io.ReadFull(c.GetTCPConnection(), buf); err != nil {
+			c.Stop()
+			debugPrintWarn(err.Error())
+			break
+		}
+		msg.SetData(buf)
 
 		req = &Request{
 			connector: c,
@@ -105,6 +110,7 @@ func (c *Connector) Read() {
 }
 
 func (c *Connector) Write() {
+	defer debugPrint("Goroutine write quit from UUID=%s", c.GetUUID())
 	defer c.Stop()
 	for {
 		select {

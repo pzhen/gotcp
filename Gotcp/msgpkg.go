@@ -56,6 +56,10 @@ func (p *msgPkg) Unpack(binaryData []byte) (Igotcp.IMessage, error) {
 		return nil, err
 	}
 
+	if len == 0 {
+		return nil, errors.New("Msgpkg data len=0")
+	}
+
 	msg := &Message{
 		Len: len,
 		Id:  id,
