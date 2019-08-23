@@ -13,7 +13,7 @@ import (
 func main() {
 	c:= make(chan struct{})
 
-	for i:=0; i< 100;i++ {
+	for i:=0; i< 1000;i++ {
 		go func(i int) {
 			var (
 				conn net.Conn
@@ -48,7 +48,7 @@ func main() {
 						msg := msgHead.(*Gotcp.Message)
 						msg.Data = make([]byte, msg.GetLen())
 						_, err = io.ReadFull(conn, msg.Data)
-						fmt.Println("---> Recv MsgID: ", msg.Id, ", datalen = ", msg.Len, "data = ", string(msg.Data))
+						//fmt.Println("---> Recv MsgID: ", msg.Id, ", datalen = ", msg.Len, "data = ", string(msg.Data))
 					}
 				}()
 

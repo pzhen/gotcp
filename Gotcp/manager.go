@@ -21,12 +21,14 @@ func (mgr *Manager) Add(conn Igotcp.IConnector) {
 	mgr.connLock.Lock()
 	defer mgr.connLock.Unlock()
 	mgr.connMap[conn.GetUUID()] = conn
+	debugPrint("Manager length=%d", len(mgr.connMap))
 }
 
 func (mgr *Manager) Remove(conn Igotcp.IConnector) {
 	mgr.connLock.Lock()
 	defer mgr.connLock.Unlock()
 	delete(mgr.connMap, conn.GetUUID())
+	debugPrint("Manager length=%d", len(mgr.connMap))
 }
 
 func (mgr *Manager) Get(uuid string) (Igotcp.IConnector, error) {

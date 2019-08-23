@@ -30,89 +30,84 @@ conf/gotcp.json
 ```json
 {
   "Name": "MyTcpServer",
-  "Host": "127.0.0.1",
-  "Port": 9888,
+  "Address": "127.0.0.1:9888",
   "MaxConn": 1,
   "MaxPkgSize": 512,
-  "IPVersion":"tcp4",
+  "Network":"tcp4",
   "WorkPoolSize":10
  }
 ```
 
 server.go
-```go
+```
 package main
 
 import (
 	"fmt"
+	_ "github.com/mkevac/debugcharts"
 	"gotcp/Gotcp"
 	"gotcp/Igotcp"
+	_ "net/http/pprof"
 )
 
 type MyRouter1 struct {
 	Gotcp.BaseRouter
 }
 
-func (m *MyRouter1)BeforeHandle(r Igotcp.IRequest)  {
-    //Code ...
-}
-
-func (m *MyRouter1) Handle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("11111 handle ..........")); err != nil {
-		fmt.Println(err)
-	}
-}
-
-func (m *MyRouter1)AfterHandle(r Igotcp.IRequest)  {
-    //Code ...
-}
-
-
-
 type MyRouter2 struct {
 	Gotcp.BaseRouter
 }
 
-func (m *MyRouter2)BeforeHandle(r Igotcp.IRequest)  {
-    //Code ...
-}
-
-func (m *MyRouter2) Handle(r Igotcp.IRequest) {
-	if err := r.GetConnector().Send(1, []byte("22222 handle .........")); err != nil {
+//业务处理前
+func (m *MyRouter1) BeforeHandle(r Igotcp.IRequest) {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1======>BeforeHandle")); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func (m *MyRouter2)AfterHandle(r Igotcp.IRequest)  {
-    //Code ...
+//业务处理
+func (m *MyRouter1) Handle(r Igotcp.IRequest) {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1======>Handle")); err != nil {
+		fmt.Println(err)
+	}
 }
 
+//业务处理后
+func (m *MyRouter1) AfterHandle(r Igotcp.IRequest) {
+	if err := r.GetConnector().Send(1, []byte("MyRouter1======>AfterHandle")); err != nil {
+		fmt.Println(err)
+	}
+}
 
-//链接创建时hook
-func doBefore(connector Igotcp.IConnector)  {
-	fmt.Println("=============>doBefore")
+//直接处理业务
+func (m *MyRouter2) Handle(r Igotcp.IRequest) {
+	if err := r.GetConnector().Send(1, []byte("MyRouter2======>handle")); err != nil {
+		fmt.Println(err)
+	}
+}
+
+//连接器创建后做一些处理
+func onConnect(connector Igotcp.IConnector) {
 	connector.Send(1, []byte("doBefore"))
 }
 
-//链接销毁前hook
-func doAfter(connector Igotcp.IConnector)  {
-	fmt.Println("=============>doAfter")
+//连接器销毁前做一些处理
+func offConnect(connector Igotcp.IConnector) {
 	connector.Send(2, []byte("doAfter"))
 }
 
 func main() {
-	
-	//初始化服务
+	//init server
 	srv := Gotcp.InitServer()
-	
-	//注册路由规则
+
+	//注册路由
 	srv.AddRouter(1, &MyRouter1{})
 	srv.AddRouter(2, &MyRouter2{})
 
-    //注册hook
-	srv.SetOnConnStart(doBefore)
-	srv.SetOnConnStop(doAfter)
-	
+	//注册Hook
+	srv.SetOnConnStart(onConnect)
+	srv.SetOnConnStop(offConnect)
+
 	//启动服务
 	srv.Run()
 }
