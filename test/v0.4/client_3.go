@@ -65,7 +65,7 @@ func main() {
 					msg := msgHead.(*Gotcp.Message)
 					msg.Data = make([]byte, msg.GetLen())
 					_, err = io.ReadFull(conn, msg.Data)
-					//fmt.Println("---> Recv MsgID: ", msg.Id, ", datalen = ", msg.Len, "data = ", string(msg.Data))
+					fmt.Println("---> Recv MsgID: ", msg.Id, ", datalen = ", msg.Len, "data = ", string(msg.Data))
 				}
 
 				if err != nil {
@@ -78,10 +78,5 @@ func main() {
 
 		time.Sleep(time.Millisecond*200)
 	}
-
 	<-c
-
-
-
-
 }
