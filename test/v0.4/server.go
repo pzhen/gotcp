@@ -5,6 +5,8 @@ import (
 	_ "github.com/mkevac/debugcharts"
 	"gotcp/Gotcp"
 	"gotcp/Igotcp"
+	"gotcp/Utils"
+	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -55,6 +57,14 @@ func offConnect(connector Igotcp.IConnector) {
 }
 
 func main() {
+	Utils.SetSysLimit()
+	//pprof
+	go func() {
+		if err := http.ListenAndServe("127.0.0.1:29999", nil); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
 	//init server
 	srv := Gotcp.InitServer()
 

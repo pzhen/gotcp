@@ -105,7 +105,7 @@ func (c *Connector) Read() {
 			go c.handle.DoMsgHandler(req)
 		}
 
-		debugPrint("Receive : msgId : %d , msgLen : %d msgData : %s", msg.GetId(), msg.GetLen(), msg.GetData())
+		//debugPrint("Receive : msgId : %d , msgLen : %d msgData : %s", msg.GetId(), msg.GetLen(), msg.GetData())
 	}
 }
 
