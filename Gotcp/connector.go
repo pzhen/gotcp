@@ -7,6 +7,7 @@ import (
 	"hash/crc32"
 	"io"
 	"net"
+	"sync"
 )
 
 type Connector struct {
@@ -17,6 +18,7 @@ type Connector struct {
 	handle   Igotcp.IHandle
 	msgChan  chan []byte
 	instance Igotcp.IServer
+	mutex     sync.Mutex
 }
 
 func NewConnector(srv Igotcp.IServer, conn *net.TCPConn, cid string, r Igotcp.IHandle) (connector Igotcp.IConnector) {
@@ -41,19 +43,17 @@ func (c *Connector) Start() {
 }
 
 func (c *Connector) Stop() {
-	if c.isClosed == true {
-		return
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if ! c.isClosed {
+		c.isClosed = true
+		c.instance.CallOnConnStop(c)
+		c.conn.Close()
+		c.exitChan <- true
+		c.instance.GetManager().Remove(c)
+		close(c.exitChan)
+		close(c.msgChan)
 	}
-	c.isClosed = true
-
-	c.instance.CallOnConnStop(c)
-
-	c.conn.Close()
-	c.exitChan <- true
-	c.instance.GetManager().Remove(c)
-
-	close(c.exitChan)
-	close(c.msgChan)
 }
 
 func (c *Connector) Read() {
@@ -72,22 +72,22 @@ func (c *Connector) Read() {
 		mpkg = NewMsgPack()
 		headData = make([]byte, mpkg.GetHeadLen())
 
-		_, err = io.ReadFull(c.GetTCPConnection(), headData)
-		if err != nil {
+		if _, err = io.ReadFull(c.GetTCPConnection(), headData);
+		err != nil && err != io.EOF {
 			c.Stop()
 			debugPrintWarn(err.Error())
 			break
 		}
 
-		msg, err = mpkg.Unpack(headData)
-		if err != nil {
+		if msg, err = mpkg.Unpack(headData); err != nil {
 			c.Stop()
 			debugPrintWarn(err.Error())
 			break
 		}
 
 		buf = make([]byte, msg.GetLen())
-		if _, err = io.ReadFull(c.GetTCPConnection(), buf); err != nil {
+		if _, err = io.ReadFull(c.GetTCPConnection(), buf);
+		err != nil && err != io.EOF {
 			c.Stop()
 			debugPrintWarn(err.Error())
 			break
